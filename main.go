@@ -29,9 +29,10 @@ client:=pb.NewNodeClient(conn)
 	reqBody.Id = "gRPC"
 	reqBody.Scheme="basic"
 	reqBody.Secret=[]byte("111")
-	r, err := client.MessageLoop(context.Background(),reqBody)//.SayHello(context.Background(), reqBody)
+	nmc, err := client.MessageLoop(context.Background())//.SayHello(context.Background(), reqBody)
 	if err != nil {
 		grpclog.Fatalln(err)
 	}
+	err=nmc.Send(&pb.ClientMsg{login:{Id:"gRPC",Scheme:"basic"})
 }
 
