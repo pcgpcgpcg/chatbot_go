@@ -14,68 +14,60 @@ const (
 	address = "localhost:6061"
 )
 
-func SendClientHi(nmc pb.Node_MessageLoopClient){
+func SendClientHi(nmc *pb.Node_MessageLoopClient){
 	reqBody := new(ClientComMessage)
 	clientHi:=new(MsgClientHi)
-	clientHi.Id = "gRPC"
-	clientHi.Version="0.15.8-rc2"
+	clientHi.Id = "69990"
+	clientHi.UserAgent="TinodeWeb/0.15.14 (Chrome/73.0; Win32); tinodejs/0.15.14"
+	clientHi.Version="0.15.14"
 	clientHi.DeviceID="L1iC2"
 	reqBody.Hi=clientHi
 	//.SayHello(context.Background(), reqBody)
-	err:=nmc.Send(pbCliSerialize(reqBody))
-	serverMsg,err:=nmc.Recv()
+	err:=(*nmc).Send(pbCliSerialize(reqBody))
+	serverMsg,err:=(*nmc).Recv()
 	if err != nil{
 		fmt.Print(err)
 		return
 	}
-	fmt.Print(serverMsg)
+	fmt.Println(serverMsg)
 }
 
-func SendClientLogin(nmc pb.Node_MessageLoopClient){
+func SendClientLogin(nmc *pb.Node_MessageLoopClient){
 	reqBody := new(ClientComMessage)
 	clientLogin:=new(MsgClientLogin)
-	clientLogin.Id = "gRPC"
+	clientLogin.Id = "69991"
 	clientLogin.Scheme="basic"
-	encodedString:=base64.StdEncoding.EncodeToString([]byte("alice:alice123"))
+	encodedString:=base64.URLEncoding.EncodeToString([]byte("alice:alice123"))
+	fmt.Println(encodedString)
 	clientLogin.Secret=[]byte(encodedString)
 	reqBody.Login=clientLogin
 	//.SayHello(context.Background(), reqBody)
-	err:=nmc.Send(pbCliSerialize(reqBody))
-	serverMsg,err:=nmc.Recv()
+	err:=(*nmc).Send(pbCliSerialize(reqBody))
+	serverMsg,err:=(*nmc).Recv()
 	if err != nil{
 		fmt.Print(err)
 		return
 	}
-	fmt.Print(serverMsg)
+	fmt.Println(serverMsg)
 }
 
 func main() {
-	fmt.Print("starting the golang chatbot.....")
+	fmt.Println("starting the golang chatbot.....")
 	// Set up a connection to the gRPC server.
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	fmt.Print("server connected with:"+address)
+	fmt.Println("server connected with:"+address)
 	// Creates a new CustomerClient
     client:=pb.NewNodeClient(conn)
 	nmc, err := client.MessageLoop(context.Background())
 	if err != nil {
 		grpclog.Fatalln(err)
 	}
-	// 调用方法
-	reqBody := new(ClientComMessage)
-	clientLogin:=new(MsgClientLogin)
-	clientLogin.Id = "gRPC"
-	clientLogin.Scheme="basic"
-	encodedString:=base64.StdEncoding.EncodeToString([]byte("alice:alice123"))
-	clientLogin.Secret=[]byte(encodedString)
-	reqBody.Login=clientLogin
-	//.SayHello(context.Background(), reqBody)
-	err=nmc.Send(pbCliSerialize(reqBody))
-	serverMsg,err:=nmc.Recv()
-	fmt.Print(serverMsg)
+	SendClientHi(&nmc)
+	SendClientLogin(&nmc)
 
 	select {} // 阻塞
 }
