@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
 	"log"
-	pb "chatbot_go/proto"
+	pb "chatbot_go/pbx"
 )
 
 const (
@@ -25,14 +25,18 @@ func main() {
 	// Creates a new CustomerClient
 client:=pb.NewNodeClient(conn)
 	// 调用方法
-	reqBody := new(pb.ClientLogin)
-	reqBody.Id = "gRPC"
-	reqBody.Scheme="basic"
-	reqBody.Secret=[]byte("111")
+	reqBody := new(ClientComMessage)
+	clientLogin:=new(MsgClientLogin)
+	clientLogin.Id = "gRPC"
+	clientLogin.Scheme="basic"
+	clientLogin.Secret=[]byte("111")
+	reqBody.Login=clientLogin
+
+
 	nmc, err := client.MessageLoop(context.Background())//.SayHello(context.Background(), reqBody)
 	if err != nil {
 		grpclog.Fatalln(err)
 	}
-	err=nmc.Send(&pb.ClientMsg{login:{Id:"gRPC",Scheme:"basic"})
+	err=nmc.Send(pbCliSerialize(reqBody))
 }
 

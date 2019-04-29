@@ -6,8 +6,7 @@ import (
 	"encoding/json"
 	"log"
 	"time"
-
-	"chatbot_go/proto"
+	"chatbot_go/pbx"
 	"chatbot_go/types"
 )
 
@@ -25,17 +24,6 @@ func pbServCtrlSerialize(ctrl *MsgServerCtrl) *pbx.ServerMsg_Ctrl {
 		Code:   int32(ctrl.Code),
 		Text:   ctrl.Text,
 		Params: params}}
-}
-
-func pbServDataSerialize(data *MsgServerData) *pbx.ServerMsg_Data {
-	return &pbx.ServerMsg_Data{Data: &pbx.ServerData{
-		Topic:      data.Topic,
-		FromUserId: data.From,
-		Timestamp:  timeToInt64(data.Timestamp),
-		DeletedAt:  timeToInt64(data.DeletedAt),
-		SeqId:      int32(data.SeqId),
-		Head:       interfaceMapToByteMap(data.Head),
-		Content:    interfaceToBytes(data.Content)}}
 }
 
 func pbServPresSerialize(pres *MsgServerPres) *pbx.ServerMsg_Pres {
@@ -96,105 +84,6 @@ func pbServMetaSerialize(meta *MsgServerMeta) *pbx.ServerMsg_Meta {
 		Sub:   pbTopicSubSliceSerialize(meta.Sub),
 		Del:   pbDelValuesSerialize(meta.Del),
 	}}
-}
-
-// Convert ServerComMessage to pbx.ServerMsg
-func pbServSerialize(msg *ServerComMessage) *pbx.ServerMsg {
-	var pkt pbx.ServerMsg
-
-	switch {
-	case msg.Ctrl != nil:
-		pkt.Message = pbServCtrlSerialize(msg.Ctrl)
-	case msg.Data != nil:
-		pkt.Message = pbServDataSerialize(msg.Data)
-	case msg.Pres != nil:
-		pkt.Message = pbServPresSerialize(msg.Pres)
-	case msg.Info != nil:
-		pkt.Message = pbServInfoSerialize(msg.Info)
-	case msg.Meta != nil:
-		pkt.Message = pbServMetaSerialize(msg.Meta)
-	}
-
-	pkt.Topic = msg.rcptto
-
-	return &pkt
-}
-
-func pbServDeserialize(pkt *pbx.ServerMsg) *ServerComMessage {
-	var msg ServerComMessage
-	if ctrl := pkt.GetCtrl(); ctrl != nil {
-		msg.Ctrl = &MsgServerCtrl{
-			Id:     ctrl.GetId(),
-			Topic:  ctrl.GetTopic(),
-			Code:   int(ctrl.GetCode()),
-			Text:   ctrl.GetText(),
-			Params: byteMapToInterfaceMap(ctrl.GetParams()),
-		}
-	} else if data := pkt.GetData(); data != nil {
-		msg.Data = &MsgServerData{
-			Topic:     data.GetTopic(),
-			From:      data.GetFromUserId(),
-			Timestamp: int64ToTime(data.GetTimestamp()),
-			DeletedAt: int64ToTime(data.GetDeletedAt()),
-			SeqId:     int(data.GetSeqId()),
-			Head:      byteMapToInterfaceMap(data.GetHead()),
-			Content:   data.GetContent(),
-		}
-	} else if pres := pkt.GetPres(); pres != nil {
-		var what string
-		switch pres.GetWhat() {
-		case pbx.ServerPres_ON:
-			what = "on"
-		case pbx.ServerPres_OFF:
-			what = "off"
-		case pbx.ServerPres_UA:
-			what = "ua"
-		case pbx.ServerPres_UPD:
-			what = "upd"
-		case pbx.ServerPres_GONE:
-			what = "gone"
-		case pbx.ServerPres_ACS:
-			what = "acs"
-		case pbx.ServerPres_TERM:
-			what = "term"
-		case pbx.ServerPres_MSG:
-			what = "msg"
-		case pbx.ServerPres_READ:
-			what = "read"
-		case pbx.ServerPres_RECV:
-			what = "recv"
-		case pbx.ServerPres_DEL:
-			what = "del"
-		}
-		msg.Pres = &MsgServerPres{
-			Topic:     pres.GetTopic(),
-			Src:       pres.GetSrc(),
-			What:      what,
-			UserAgent: pres.GetUserAgent(),
-			SeqId:     int(pres.GetSeqId()),
-			DelId:     int(pres.GetDelId()),
-			DelSeq:    pbDelQueryDeserialize(pres.GetDelSeq()),
-			AcsTarget: pres.GetTargetUserId(),
-			AcsActor:  pres.GetActorUserId(),
-			Acs:       pbAccessModeDeserialize(pres.GetAcs()),
-		}
-	} else if info := pkt.GetInfo(); info != nil {
-		msg.Info = &MsgServerInfo{
-			Topic: info.GetTopic(),
-			From:  info.GetFromUserId(),
-			What:  pbInfoNoteWhatDeserialize(info.GetWhat()),
-			SeqId: int(info.GetSeqId()),
-		}
-	} else if meta := pkt.GetMeta(); meta != nil {
-		msg.Meta = &MsgServerMeta{
-			Id:    meta.GetId(),
-			Topic: meta.GetTopic(),
-			Desc:  pbTopicDescDeserialize(meta.GetDesc()),
-			Sub:   pbTopicSubSliceDeserialize(meta.GetSub()),
-			Del:   pbDelValuesDeserialize(meta.GetDel()),
-		}
-	}
-	return &msg
 }
 
 // Convert ClientComMessage to pbx.ClientMsg
@@ -692,21 +581,6 @@ func pbTopicDescDeserialize(desc *pbx.TopicDesc) *MsgTopicDesc {
 	}
 }
 
-func pbTopicSerialize(topic *Topic) *pbx.TopicDesc {
-	if topic == nil {
-		return nil
-	}
-	return &pbx.TopicDesc{
-		CreatedAt: timeToInt64(&topic.created),
-		UpdatedAt: timeToInt64(&topic.updated),
-		Defacs: &pbx.DefaultAcsMode{
-			Auth: topic.accessAuth.String(),
-			Anon: topic.accessAnon.String()},
-		SeqId:  int32(topic.lastID),
-		DelId:  int32(topic.delID),
-		Public: interfaceToBytes(topic.public),
-	}
-}
 
 func pbTopicSubSliceSerialize(subs []MsgTopicSub) []*pbx.TopicSub {
 	if subs == nil || len(subs) == 0 {
