@@ -2,7 +2,7 @@ package main
 
 import (
 	pb "chatbot_go/pbx"
-	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -11,10 +11,11 @@ import (
 )
 
 const (
-	address = "localhost:6061"
+	//address = "localhost:6061"//"192.168.8.122:6061"
+	address = "192.168.8.122:6061"
 )
 
-func SendClientHi(nmc *pb.Node_MessageLoopClient){
+func SendClientHi(nmc *pb.Node_MessageLoopClient) error{
 	reqBody := new(ClientComMessage)
 	clientHi:=new(MsgClientHi)
 	clientHi.Id = "69990"
@@ -22,6 +23,32 @@ func SendClientHi(nmc *pb.Node_MessageLoopClient){
 	clientHi.Version="0.15.14"
 	clientHi.DeviceID="L1iC2"
 	reqBody.Hi=clientHi
+	//.SayHello(context.Background(), reqBody)
+	err:=(*nmc).Send(pbCliSerialize(reqBody))
+	if err!=nil{
+		return nil
+	}
+
+	serverMsg,err:=(*nmc).Recv()
+	if err!=nil{
+
+	}
+	fmt.Println(serverMsg)
+	return err
+}
+
+func SendClientLogin(nmc *pb.Node_MessageLoopClient){
+	reqBody := new(ClientComMessage)
+	clientLogin:=new(MsgClientLogin)
+	clientLogin.Id = "69991"
+	clientLogin.Scheme="basic"
+	//encodedString:=base64.URLEncoding.EncodeToString([]byte("alice:alice123"))
+	encodedString:="alice:alice123"
+	fmt.Println(encodedString)
+	clientLogin.Secret=[]byte(encodedString)
+	reqBody.Login=clientLogin
+	jsons,_:=json.Marshal(*clientLogin)
+	fmt.Println(string(jsons))
 	//.SayHello(context.Background(), reqBody)
 	err:=(*nmc).Send(pbCliSerialize(reqBody))
 	serverMsg,err:=(*nmc).Recv()
@@ -32,15 +59,18 @@ func SendClientHi(nmc *pb.Node_MessageLoopClient){
 	fmt.Println(serverMsg)
 }
 
-func SendClientLogin(nmc *pb.Node_MessageLoopClient){
+func sendClientSub(nmc *pb.Node_MessageLoopClient) error{
 	reqBody := new(ClientComMessage)
-	clientLogin:=new(MsgClientLogin)
-	clientLogin.Id = "69991"
-	clientLogin.Scheme="basic"
-	encodedString:=base64.URLEncoding.EncodeToString([]byte("alice:alice123"))
+	clientSub:=new(MsgClientSub)
+	clientSub.Id = "69992"
+	clientSub.Set(
+	//encodedString:=base64.URLEncoding.EncodeToString([]byte("alice:alice123"))
+	encodedString:="alice:alice123"
 	fmt.Println(encodedString)
 	clientLogin.Secret=[]byte(encodedString)
 	reqBody.Login=clientLogin
+	jsons,_:=json.Marshal(*clientLogin)
+	fmt.Println(string(jsons))
 	//.SayHello(context.Background(), reqBody)
 	err:=(*nmc).Send(pbCliSerialize(reqBody))
 	serverMsg,err:=(*nmc).Recv()
