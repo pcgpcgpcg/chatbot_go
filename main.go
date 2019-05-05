@@ -11,6 +11,10 @@ import (
 	"strconv"
 )
 
+type UserInfo struct{
+	Username string `json:"username"`
+	Passwd string `json:"passwd"`
+}
 const (
 	address = "localhost:6061"//"192.168.8.122:6061"
 	//address = "192.168.8.122:6061"
@@ -165,16 +169,15 @@ func loginToServer(username string,passwd string,index int){
 
 
 func testManyConnection(){
-	var userMap=map[string]string{}
-	userMap["alice"]="alice123"
-	userMap["bob"]="bob123"
-	userMap["carol"]="carol123"
-	userMap["dave"]="dave123"
-	userMap["frank"]="frank123"
-	var index int
-	for key,value:=range userMap{
-		loginToServer(key,value,index)
-		index++
+	var users=make([]UserInfo, 5)
+	users[0]=UserInfo{"alice","alice123"}
+	users[1]=UserInfo{"bob","bob123"}
+	users[2]=UserInfo{"carol","carol123"}
+	users[3]=UserInfo{"dave","dave123"}
+	users[4]=UserInfo{"frank","frank123"}
+
+	for index,value:=range users{
+		loginToServer(value.Username,value.Passwd,index)
 	}
 }
 
