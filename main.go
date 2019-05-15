@@ -169,12 +169,10 @@ func loginToServer(username string,passwd string,index int){
 
 
 func testManyConnection(){
-	var users=make([]UserInfo, 5)
-	users[0]=UserInfo{"alice","alice123"}
-	users[1]=UserInfo{"bob","bob123"}
-	users[2]=UserInfo{"carol","carol123"}
-	users[3]=UserInfo{"dave","dave123"}
-	users[4]=UserInfo{"frank","frank123"}
+	var users=make([]UserInfo, 200)
+	for i:=0;i<200;i++{
+		users[i]=UserInfo{"bot"+strconv.Itoa(i),"123456"}
+	}
 
 	for index,value:=range users{
 		loginToServer(value.Username,value.Passwd,index)
